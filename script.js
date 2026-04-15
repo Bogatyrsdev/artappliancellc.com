@@ -28,24 +28,46 @@ if (header) {
   });
 }
 
-// Contact form handling
+// Contact form handling — submits via fetch to the form's action (Formspree),
+// then shows an in-page confirmation. Formspree can be configured to send
+// the submission to an email-to-SMS gateway so you receive a text.
 const contactForm = document.getElementById('contactForm');
 if (contactForm) {
-  contactForm.addEventListener('submit', (e) => {
+  const confirmation = document.getElementById('formConfirmation');
+  contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = contactForm.querySelector('button[type="submit"]');
     const originalText = btn.textContent;
-    btn.textContent = 'Request Submitted!';
-    btn.style.background = '#22c55e';
-    btn.style.borderColor = '#22c55e';
+    btn.textContent = 'Sending...';
     btn.disabled = true;
-    setTimeout(() => {
-      btn.textContent = originalText;
-      btn.style.background = '';
-      btn.style.borderColor = '';
+
+    try {
+      const response = await fetch(contactForm.action, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: new FormData(contactForm)
+      });
+
+      if (response.ok) {
+        contactForm.reset();
+        if (confirmation) confirmation.hidden = false;
+        btn.textContent = 'Request Received ✓';
+        btn.style.background = '#22c55e';
+        btn.style.borderColor = '#22c55e';
+      } else {
+        throw new Error('Submission failed');
+      }
+    } catch (err) {
+      btn.textContent = 'Try Again';
+      btn.style.background = '#ef4444';
+      btn.style.borderColor = '#ef4444';
       btn.disabled = false;
-      contactForm.reset();
-    }, 3000);
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.style.borderColor = '';
+      }, 3000);
+    }
   });
 }
 
